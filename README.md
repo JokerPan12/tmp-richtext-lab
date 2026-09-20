@@ -2,9 +2,20 @@
 
 给游戏聊天框生成 Unity **TextMeshPro 富文本**代码：**输入文字 → 勾样式 → 一键出代码**。
 
+**在线版**：https://jokerpan12.github.io/tmp-richtext-lab/
+**标签实验室**：https://jokerpan12.github.io/tmp-richtext-lab/lab.html
+
+手机直接开上面两个链接就能用（已做移动端自适应）。
+
 ## 打开方式
 
-**直接双击 `index.html`** —— 纯静态、零依赖，不需要起服务器。
+**方式一（推荐）**：直接开在线版，手机也能用。
+
+**方式二**：克隆到本地后**直接双击 `index.html`** —— 纯静态、零依赖，不需要起服务器。
+
+```bash
+git clone https://github.com/JokerPan12/tmp-richtext-lab.git
+```
 
 > 注意：三个 `.mjs` 文件和 HTML 必须在同一目录下。页面用的是相对路径加载。
 
