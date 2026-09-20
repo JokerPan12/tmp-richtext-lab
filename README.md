@@ -24,7 +24,7 @@ git clone https://github.com/JokerPan12/tmp-richtext-lab.git
 1. **输入文字** —— 输入框里回车即换行，生成时自动转成 `<br>`。右侧实时显示字数 + 整段代码字符数。
 2. **选择样式** —— 点一下选中（按钮打勾），再点一下取消：
    - **快捷组合**：金色加粗 / 只有颜色 / 大字警告 / 小字注释 / 全部清空
-   - **文字样式**：加粗、斜体、下划线、删除线、全部大写、全部小写、下标、上标、小型大写、禁止换行
+   - **文字样式**：**加粗、斜体**（只保留这两个，原因见下）
    - **颜色**：12 个常用色板 + 取色器 + 手填 HEX（支持 8 位带透明度）
    - **字号**：8 档预设 + 滑块/数字框（40–300，也可手填到 999）
    - **字距 / 行高**、**强调 / 装饰**（换字体、字重、半透明、等宽、插入空白）
@@ -109,9 +109,9 @@ Access to script at 'file:///.../lib.mjs' from origin 'null' has been blocked by
 | `lib.mjs` | 共享库（UMD）：标签表、解析器、渲染器、语法高亮 |
 | `compose.mjs` | 生成器核心（UMD）：`compose(文字, 顺序, 勾选, 参数)` → 代码 |
 | `test-helpers.mjs` | 测试辅助：UMD 加载器 + DOM 桩 |
-| `selftest-compose.mjs` | 生成逻辑测试（28 项） |
+| `selftest-compose.mjs` | 生成逻辑测试（41 项） |
 | `selftest-lib.mjs` | 解析/渲染层测试（25 项） |
-| `selftest-pages.mjs` | 页面测试（27 项）：按 HTML 的脚本顺序真跑两个页面 + `file://` 兼容性回归 |
+| `selftest-pages.mjs` | 页面测试（58 项）：按 HTML 的脚本顺序真跑两个页面 + `file://` 与移动端回归 |
 | `check.ps1` | 一键跑全部：语法检查 + 三套测试 |
 
 `lib.mjs` / `compose.mjs` 是**唯一真值源**，页面和测试都加载同一份文件，没有各自复制解析器 —— 改一处两边都生效。
@@ -122,13 +122,15 @@ Access to script at 'file:///.../lib.mjs' from origin 'null' has been blocked by
 powershell -ExecutionPolicy Bypass -File .\check.ps1
 ```
 
-共 80 项断言，全绿。其中这几条是踩过的坑留下来的回归测试：
+共 124 项断言，全绿。其中这几条是踩过的坑留下来的回归测试：
 
 - `index.html / lab.html 没有 type="module" 脚本`
 - `index.html / lab.html 没有 import 语句`
 - `页面暴露了 __composer（说明脚本执行到了末尾）` —— 脚本中途挂掉就没人设置这个全局
-- `每种样式的闭合标签都正确（27 种）` —— 防止再生成 `</color=#fff>` 这种带属性的闭合标签
+- `每种样式的闭合标签都正确` —— 防止再生成 `</color=#fff>` 这种带属性的闭合标签
 - `复现原始例子` —— 防止标签嵌套顺序被写反
+- `文字样式只剩 b 和 i`、`生成器不再提供 <u>/<s>/<uppercase>…` —— 防止被移除的标签又混回来
+- `移动端断点 / viewport / 宽度保险` —— 防止响应式改动被覆盖
 
 ## 哪些标签已验证
 
@@ -139,9 +141,11 @@ powershell -ExecutionPolicy Bypass -File .\check.ps1
 | `<color=#e0b45e>` | **可用**（最初那条消息验证过） |
 | `<size=100>` | **可用** |
 | `<b>` | **可用** |
+| `<i>` | 已保留在生成器里（TMP 支持，等你在游戏里确认） |
 | `<gradient>` | **无效** —— 需要客户端有同名渐变预设，已从生成器移除 |
 | `<mark>` | **无效** —— 已从生成器移除 |
-| 其余标签 | **未实测**，勾之前建议先去 `lab.html` 逐个试 |
+| `<u>` `<s>` `<uppercase>` `<lowercase>` `<sub>` `<sup>` `<smallcaps>` `<nobr>` | **已从生成器移除**（目标游戏未验证，避免生成无效代码）。注意：**这些 TMP 本身都支持**，只是聊天框可能不吃。想恢复的话，把它们加回 `compose.mjs` 的 `TEXT_OPTS` 即可 |
+| 其余标签（`cspace` `lineh` `voffset` `rotate` `indent` `width` `sprite` `font` `link` 等） | **未实测**，勾之前建议先去 `lab.html` 逐个试 |
 
 > 用法：在 `lab.html` 里发一条**只带单个标签**的短消息，看三种结果 —— ① 渲染出效果 = 放行；② 原样显示 `<mark=x>` = 未过滤但不支持；③ 整条消失 = 被服务端过滤。
 

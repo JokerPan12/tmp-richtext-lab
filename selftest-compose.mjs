@@ -88,7 +88,8 @@ check("link 用引号包 id", gen("x", ["link"], {link:"item_1001"}).includes('<
 /* ---------- 7) 元数据自洽 ---------- */
 check("每个样式都有中文名", Object.keys(PLAIN_TAGS).concat(ALL_OPTS.map(o=>o.k)).every(k => !!LABEL[k]),
   Object.keys(PLAIN_TAGS).concat(ALL_OPTS.map(o=>o.k)).filter(k => !LABEL[k]).join(","));
-check("大小写互斥同组", GROUPS.uppercase === "case" && GROUPS.lowercase === "case");
+check("同组样式互斥（若有分组）",
+  Object.keys(GROUPS).length === 0 || Object.values(GROUPS).every(g => typeof g === "string"));
 check("标签不允许重复出现两次", (() => {
   const seen = {};
   return ALL_OPTS.every(o => !seen[o.k] && (seen[o.k] = 1));
@@ -114,6 +115,22 @@ DEAD_KEYS.forEach(function(k){
 check("生成器不会产出已失效的标签",
   DEAD_KEYS.every(function(k){ return gen("x", Object.keys(PLAIN_TAGS).concat(ALL_OPTS.map(o => o.k))).indexOf("<" + k) < 0; }),
   gen("x", Object.keys(PLAIN_TAGS).concat(ALL_OPTS.map(o => o.k))));
+
+/* ---------- 11) 回归：文字样式只保留加粗和斜体 ---------- */
+/* 其余 TMP 文字标签（u/s/大小写/上下标/小型大写/nobr）未在目标游戏聊天中验证，已移除。
+   注意：这是"生成器不提供"，不是"TMP 不支持"—— 想恢复时把它们加回 TEXT_OPTS 即可。 */
+const TEXT_KEYS = ALL_OPTS.map(o => o.k).filter(k => ["b","i","u","s","uppercase","lowercase","sub","sup","smallcaps","nobr"].includes(k));
+check("文字样式只剩 b 和 i", JSON.stringify(TEXT_KEYS.sort()) === '["b","i"]', JSON.stringify(TEXT_KEYS));
+["u","s","uppercase","lowercase","sub","sup","smallcaps","nobr"].forEach(function(k){
+  check("生成器不再提供 <" + k + ">", !(k in PLAIN_TAGS) && !(k in LABEL) && !TEXT_KEYS.includes(k));
+});
+check("勾满全部样式也产不出已移除的文字标签", (function(){
+  const all = Object.keys(PLAIN_TAGS).concat(ALL_OPTS.map(o => o.k));
+  const code = gen("x", all);
+  return ["<u>","<s>","<uppercase>","<lowercase>","<sub>","<sup>","<smallcaps>","<nobr>"].every(function(t){
+    return code.indexOf(t) < 0;
+  });
+})(), gen("x", Object.keys(PLAIN_TAGS).concat(ALL_OPTS.map(o => o.k))));
 
 console.log("\n结果: " + pass + " 通过, " + fail + " 失败");
 process.exit(fail ? 1 : 0);

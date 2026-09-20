@@ -11,18 +11,12 @@
    纯函数、不碰 DOM，所以浏览器和 Node 自检脚本可以共用同一份实现。
    ============================================================================= */
 
-/* 所有可用样式。tag(state) 返回该样式的开标签。 */
+/* 所有可用样式。tag(state) 返回该样式的开标签。
+   文字样式目前只保留实测可用的 <b> / <i>；其余 TMP 标签（u/s/大小写/上下标/小型大写/nobr）
+   已从生成器移除 —— 不是 TMP 不支持，而是目标游戏聊天里未验证，留着容易生成无效代码。 */
 const TEXT_OPTS = [
-  {k:"b",         label:"加粗",     tag:()=>`<b>`},
-  {k:"i",         label:"斜体",     tag:()=>`<i>`},
-  {k:"u",         label:"下划线",   tag:()=>`<u>`},
-  {k:"s",         label:"删除线",   tag:()=>`<s>`},
-  {k:"uppercase", label:"全部大写", group:"case", tag:()=>`<uppercase>`},
-  {k:"lowercase", label:"全部小写", group:"case", tag:()=>`<lowercase>`},
-  {k:"sub",       label:"下标",     tag:()=>`<sub>`},
-  {k:"sup",       label:"上标",     tag:()=>`<sup>`},
-  {k:"smallcaps", label:"小型大写", tag:()=>`<smallcaps>`},
-  {k:"nobr",      label:"禁止换行", tag:()=>`<nobr>`}
+  {k:"b", label:"加粗", tag:()=>`<b>`},
+  {k:"i", label:"斜体", tag:()=>`<i>`}
 ];
 
 const DECO_OPTS = [
