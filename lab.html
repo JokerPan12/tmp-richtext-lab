@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>富文本标签预览实验室 · TMP 风格</title>
+<style>
+  :root{
+    --bg:#12141a;
+    --panel:#1a1d26;
+    --panel2:#222634;
+    --line:#2e3346;
+    --txt:#e7e9f0;
+    --dim:#8f96ad;
+    --gold:#e0b45e;
+    --ok:#5ad19a;
+    --bad:#ef6b6b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg);color:var(--txt);
+    font-family:"Microsoft YaHei","PingFang SC","Noto Sans SC",system-ui,sans-serif;
+    font-size:14px;line-height:1.6;
+    overflow-x:hidden;-webkit-text-size-adjust:100%;
+  }
+  img,svg,table,pre{max-width:100%}
+  pre{white-space:pre-wrap}
+  .app{display:grid;grid-template-columns:340px 1fr;height:100%}
+
+  .side{
+    background:var(--panel);border-right:1px solid var(--line);
+    overflow:auto;padding:14px;
+  }
+  .brand{font-size:15px;font-weight:700;letter-spacing:.5px}
+  .brand small{display:block;color:var(--dim);font-weight:400;font-size:11px;margin-top:2px}
+  .sec{margin-top:16px}
+  .sec > h3{
+    font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);
+    margin:0 0 8px;font-weight:600;
+  }
+  .field{display:flex;gap:8px;align-items:center;margin:6px 0}
+  .field label{flex:1;color:var(--txt);font-size:12.5px;cursor:pointer}
+  input[type=range]{width:100%;accent-color:var(--gold)}
+  textarea{
+    width:100%;background:#0e1015;color:var(--txt);border:1px solid var(--line);
+    border-radius:8px;padding:10px;font-family:Consolas,"Courier New",monospace;
+    font-size:12.5px;resize:vertical;line-height:1.7;
+  }
+  textarea:focus{outline:1px solid var(--gold)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  button{
+    background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+    padding:6px 11px;border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;
+  }
+  button:hover{border-color:var(--gold);color:var(--gold)}
+  .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .chip{
+    background:var(--panel2);border:1px solid var(--line);color:var(--dim);
+    font-size:11px;padding:3px 8px;border-radius:20px;cursor:pointer;
+  }
+  .chip.on{color:var(--ok);border-color:#2f5d47;background:#16241d}
+  .chip.off{color:var(--bad);border-color:#5d2f2f;background:#241616}
+  .hint{color:var(--dim);font-size:11.5px;line-height:1.65}
+
+  .main{overflow:auto;padding:18px 22px 60px}
+  .stage{margin-bottom:22px}
+  .stage > h2{
+    font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);
+    margin:0 0 10px;font-weight:600;
+  }
+  .wrap{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+
+  /* —— 模拟游戏聊天框 —— */
+  .gamechat{
+    background:#2b2d35;border:1px solid #3a3d47;border-radius:12px;
+    padding:14px 16px;min-height:64px;width:100%;max-width:720px;
+    position:relative;box-shadow:0 8px 24px rgba(0,0,0,.35) inset;
+  }
+  .gamechat.narrow{max-width:320px}
+  .gamechat::before{
+    content:attr(data-label);position:absolute;top:-9px;left:14px;
+    background:#2b2d35;padding:0 6px;color:#6f7488;font-size:10px;letter-spacing:1px;
+  }
+  .msgline{display:block;font-size:16px;line-height:1.45}
+
+  .rawbox{
+    background:#0e1015;border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px;font-family:Consolas,"Courier New",monospace;font-size:12.5px;
+    white-space:pre-wrap;word-break:break-all;color:#c8cde0;max-width:720px;width:100%;
+  }
+  .rawbox .t-name{color:#7ec3ff}
+  .rawbox .t-attr{color:#9ee493}
+  .rawbox .t-close{color:#8b93a8}
+  .rawbox .t-bad{color:#3a3f52}
+
+  /* —— 标签参考表 —— */
+  .refgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:10px}
+  .refcard{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;display:flex;gap:12px;align-items:center;
+  }
+  .refcard:hover{border-color:#3f4661}
+  .refcard .code{
+    font-family:Consolas,"Courier New",monospace;font-size:12.5px;color:var(--gold);
+    background:#0e1015;border:1px solid var(--line);border-radius:6px;
+    padding:6px 9px;min-width:172px;cursor:pointer;white-space:pre;
+  }
+  .refcard .code:hover{border-color:var(--gold)}
+  .refcard .meta{flex:1;min-width:0}
+  .refcard .name{font-size:12.5px;color:#c9cfe2}
+  .refcard .cn{font-size:11.5px;color:var(--dim)}
+  .refcard .demo{
+    font-size:13px;margin-top:5px;color:#dfe3ee;
+    border-top:1px dashed #2b3040;padding-top:5px;
+  }
+  .note{
+    background:#1b2029;border-left:3px solid var(--gold);border-radius:0 8px 8px 0;
+    padding:10px 14px;color:#c3c9dc;font-size:12.5px;max-width:760px;line-height:1.75;
+  }
+  .note b{color:var(--gold)}
+  .kbd{
+    font-family:Consolas,monospace;background:#0e1015;border:1px solid var(--line);
+    border-radius:4px;padding:1px 5px;color:#9ee493;font-size:12px;
+  }
+  .legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--dim);font-size:11.5px;margin-top:8px}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
+  .g-demo{background:linear-gradient(90deg,#e0b45e,#7ec3ff);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .sprite-chip{
+    display:inline-block;min-width:1.4em;height:1.4em;line-height:1.4em;text-align:center;
+    background:linear-gradient(135deg,#7ec3ff,#5ad19a);color:#12141a;border-radius:4px;
+    font-size:.78em;padding:0 .35em;font-weight:700;vertical-align:middle;
+  }
+
+  /* ==========================================================================
+     移动端自适应
+     ========================================================================== */
+
+  /* 触屏：加大可点区域；输入框 ≥16px 免得 iOS 聚焦时强制放大 */
+  @media (hover:none), (pointer:coarse){
+    .chip{padding:9px 13px;font-size:12.5px}
+    .refcard .code{padding:9px 11px}
+    textarea,.rawbox{font-size:15px}
+    input[type=range]{height:32px}
+  }
+
+  /* 平板竖屏 / 窄窗口：改成上下单列，并解除整页固定高度，避免出现嵌套滚动 */
+  @media (max-width:900px){
+    html,body{height:auto}
+    .app{grid-template-columns:1fr;height:auto}
+    .side{border-right:0;border-bottom:1px solid var(--line);overflow:visible;height:auto}
+    .main{overflow:visible;padding:16px 14px 60px}
+    .refgrid{grid-template-columns:1fr}
+    .gamechat,.rawbox{max-width:none}
+  }
+
+  /* 手机：参考表卡片改成上下排列，代码块不再撑出横向滚动 */
+  @media (max-width:640px){
+    .side{padding:12px}
+    .brand{font-size:14px}
+    .main{padding:14px 11px 52px}
+    .gamechat{padding:12px 13px}
+    .msgline{font-size:15px}
+    .refcard{flex-direction:column;align-items:stretch;gap:8px}
+    .refcard .code{min-width:0;white-space:pre-wrap;word-break:break-all}
+    .legend{gap:9px;font-size:11px}
+    textarea,.rawbox{padding:10px;font-size:14px}
+  }
+
+  /* 小屏手机 */
+  @media (max-width:420px){
+    .main{padding:12px 9px 44px}
+    .side{padding:10px}
+    .refcard{padding:9px 10px}
+    #text,.rawbox{font-size:14px}
+    .msgline{font-size:14px}
+  }
+
+  /* 横屏矮窗口 */
+  @media (max-height:520px) and (orientation:landscape){
+    .main{padding:12px 14px 40px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ 左侧控制面板 ============ -->
+  <aside class="side">
+    <div class="brand">
+      富文本标签预览实验室
+      <small>Unity TextMeshPro 风格 · 模拟游戏聊天框</small>
+    </div>
+
+    <div class="sec">
+      <h3>输入标记</h3>
+      <textarea id="input" rows="5" spellcheck="false"></textarea>
+      <div class="btns">
+        <button id="btn-clear">清空</button>
+        <button id="btn-restore">恢复示例</button>
+      </div>
+      <p class="hint" style="margin:8px 0 0">直接在框里改，下面的聊天框会即时重绘。也可以点右侧表格里的代码块，把它填进输入框。</p>
+    </div>
+
+    <div class="sec">
+      <h3>显示开关</h3>
+      <div class="field">
+        <label for="cb-render">渲染富文本</label>
+        <input type="checkbox" id="cb-render" checked>
+      </div>
+      <div class="field">
+        <label for="cb-whitelist">启用游戏过滤（按下方白名单）</label>
+        <input type="checkbox" id="cb-whitelist">
+      </div>
+      <div class="field">
+        <label for="cb-narrow">窄聊天框（320px，测换行/溢出）</label>
+        <input type="checkbox" id="cb-narrow">
+      </div>
+      <div class="field">
+        <label for="cb-fit">限制在框内（关闭 = 溢出可见）</label>
+        <input type="checkbox" id="cb-fit" checked>
+      </div>
+      <div class="field" style="display:block">
+        <label for="rg-base" style="display:block;margin-bottom:4px">聊天字号基准：<span id="base-val">16</span> px</label>
+        <input type="range" id="rg-base" min="10" max="28" value="16">
+      </div>
+    </div>
+
+    <div class="sec">
+      <h3>白名单标签（点击切换放行 / 过滤）</h3>
+      <div class="chips" id="chips"></div>
+      <p class="hint" style="margin:8px 0 0">游戏聊天通常会过滤掉一部分标签。被过滤的标签会<b>原样显示</b>为文字，不会渲染。</p>
+    </div>
+
+    <div class="sec">
+      <h3>怎么在游戏里验证</h3>
+      <p class="hint">
+        发一条只带单个标签的短消息，看结果分三种：<br>
+        ① 渲染出来 → 标签被放行；<br>
+        ② 原样显示 <span class="kbd">&lt;mark=x&gt;</span> → 未过滤但不支持；<br>
+        ③ 整条消失/被吞 → 被服务端过滤。
+      </p>
+    </div>
+  </aside>
+
+  <!-- ============ 右侧预览 ============ -->
+  <main class="main">
+    <div class="stage">
+      <h2>聊天框预览</h2>
+      <div class="wrap">
+        <div class="gamechat" id="chat-raw" data-label="原样（未渲染）">
+          <span class="msgline" id="out-raw"></span>
+        </div>
+      </div>
+      <div class="wrap" style="margin-top:12px">
+        <div class="gamechat" id="chat-rich" data-label="渲染结果">
+          <span class="msgline" id="out-rich"></span>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i style="background:#7ec3ff"></i>标签名</span>
+        <span><i style="background:#9ee493"></i>属性值</span>
+        <span><i style="background:#8b93a8"></i>闭合标签</span>
+        <span><i style="background:#ef6b6b"></i>被过滤 / 不生效</span>
+      </div>
+    </div>
+
+    <div class="stage">
+      <h2>上色后的标记（看清楚每个标签的边界）</h2>
+      <div class="rawbox" id="hl"></div>
+    </div>
+
+    <div class="stage">
+      <h2>标签参考表 —— 点代码块可填入输入框</h2>
+      <div class="refgrid" id="refgrid"></div>
+    </div>
+
+    <div class="stage">
+      <h2>使用要点</h2>
+      <div class="note">
+        <b>1. 必须成对闭合，不许交叉。</b>
+        <span class="kbd">&lt;color&gt;&lt;b&gt;字&lt;/b&gt;&lt;/color&gt;</span> ✅ &nbsp;
+        <span class="kbd">&lt;color&gt;&lt;b&gt;字&lt;/color&gt;&lt;/b&gt;</span> ❌<br>
+        <b>2. 自闭和标签不用收尾</b>：<span class="kbd">&lt;br&gt;</span>、<span class="kbd">&lt;sprite&gt;</span>、<span class="kbd">&lt;space&gt;</span>、<span class="kbd">&lt;page&gt;</span>、<span class="kbd">&lt;pos&gt;</span>。<br>
+        <b>3. <span class="kbd">&lt;size&gt;</span> 的数字是 TMP 点值</b>，本页按 <span class="kbd">size/100 × 聊天字号</span> 换算显示，所以 <span class="kbd">&lt;size=100&gt;</span> 就是原始大小。<br>
+        <b>4. 颜色写法</b>：<span class="kbd">#RRGGBB</span>、<span class="kbd">#RRGGBBAA</span>（末两位是透明度）、颜色名 <span class="kbd">red</span>，或 <span class="kbd">&lt;color=#ff0000&gt;</span> 不带 # 也可。<br>
+        <b>5. 依赖资源的标签不一定生效</b>：<span class="kbd">&lt;sprite&gt;</span> 要有对应表情图、<span class="kbd">&lt;font&gt;</span> 要字体已打包、<span class="kbd">&lt;style&gt;</span> / <span class="kbd">&lt;gradient&gt;</span> 要预设名真实存在。<br>
+        <b>6. 标签会占字数</b>：聊天框有字数上限时，一堆标签很容易把正文挤掉或直接被截断。<br>
+        <b>7. <span class="kbd">&lt;noparse&gt;</span> 是最保险的</b>：把内部内容当纯文本发出去，各引擎都认。
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="lib.mjs"></script>
+<script>
+var RTLib = window.RTLib;
+if(!RTLib){ document.body.insertAdjacentHTML("afterbegin", '<div style="background:#ef6b6b;color:#fff;padding:12px 16px">lib.mjs 没加载成功，请确认文件在同一目录。</div>'); }
+const { TAGS, resolveName, attrs, esc, parseTree, renderTree, linesOf, applySizes, highlight } = RTLib || {};
+
+/* =========================================================================
+   6) UI 装配
+   ========================================================================= */
+const DEFAULT_TEXT = "<size=100><color=#e0b45e><b>滴滴滴</b></color></size>";
+const DEMO2 = "第一行：<color=#7ec3ff><b>蓝色加粗</b></color> 与 <color=#ffcc00>黄色</color><br>" +
+              "<size=70><color=#9aa2b8>小字灰色注释</color></size><br>" +
+              "<mark=#ffcc0066>荧光笔</mark> <u>下划线</u> <s>删除线</s> H<sub>2</sub>O x<sup>2</sup><br>" +
+              "<cspace=0.4em>字</cspace><cspace=0.4em>距</cspace> <rotate=15>歪</rotate><rotate=-15>歪</rotate> <voffset=0.5em>上浮</voffset>";
+
+const $ = id=>document.getElementById(id);
+const inputEl=$("input"), rawEl=$("out-raw"), richEl=$("out-rich"), hlEl=$("hl");
+const chatRaw=$("chat-raw"), chatRich=$("chat-rich");
+
+/* 每个标签一个白名单开关，默认放行 */
+const WSET = new Set(Object.keys(TAGS));
+const chipsEl=$("chips");
+Object.keys(TAGS).forEach(name=>{
+  const b=document.createElement("span");
+  b.className="chip on"; b.textContent=name;
+  b.onclick=()=>{
+    if(WSET.has(name)){ WSET.delete(name); b.classList.replace("on","off"); }
+    else{ WSET.add(name); b.classList.replace("off","on"); }
+    update();
+  };
+  chipsEl.appendChild(b);
+});
+function whitelist(){ return {enabled:$("cb-whitelist").checked, set:WSET}; }
+
+/* 参考表 */
+const grid=$("refgrid");
+Object.keys(TAGS).forEach(name=>{
+  const d=TAGS[name];
+  const card=document.createElement("div"); card.className="refcard";
+  const code=document.createElement("div"); code.className="code"; code.textContent=d.ex;
+  code.title="点击填入输入框";
+  code.onclick=()=>{ inputEl.value=d.ex; update(); inputEl.focus(); };
+  const meta=document.createElement("div"); meta.className="meta";
+  const n1=document.createElement("div"); n1.className="name"; n1.textContent="<"+name+">";
+  const n2=document.createElement("div"); n2.className="cn"; n2.textContent=d.cn;
+  const demo=document.createElement("div"); demo.className="demo";
+  meta.appendChild(n1); meta.appendChild(n2); meta.appendChild(demo);
+  card.appendChild(code); card.appendChild(meta);
+  grid.appendChild(card);
+  /* 预览也要能渲染：先插入 DOM，再换算字号 */
+  demo.innerHTML="";
+  const t=parseTree(d.ex, whitelist());
+  demo.appendChild(renderTree(t, {base:13}));
+  applySizes(demo, 13);
+});
+
+/* 事件绑定 */
+inputEl.value=DEFAULT_TEXT;
+inputEl.addEventListener("input", update);
+$("cb-render").addEventListener("change", update);
+$("cb-whitelist").addEventListener("change", update);
+$("cb-narrow").addEventListener("change", update);
+$("cb-fit").addEventListener("change", update);
+$("rg-base").addEventListener("input", ()=>{ $("base-val").textContent=$("rg-base").value; update(); });
+$("btn-clear").onclick=()=>{ inputEl.value=""; update(); inputEl.focus(); };
+$("btn-restore").onclick=()=>{ inputEl.value=DEFAULT_TEXT; update(); };
+
+function update(){
+  const str=inputEl.value;
+  const wl=whitelist();
+  const base=parseFloat($("rg-base").value)||16;
+  const render=$("cb-render").checked;
+  const fit=$("cb-fit").checked;
+
+  /* 原样 */
+  rawEl.textContent=str||"（空）";
+  chatRaw.classList.toggle("narrow",$("cb-narrow").checked);
+  chatRaw.style.overflowWrap = fit?"anywhere":"normal";
+  chatRaw.style.overflow = fit?"hidden":"visible";
+
+  /* 渲染 */
+  chatRich.classList.toggle("narrow",$("cb-narrow").checked);
+  chatRich.style.overflow = fit?"hidden":"visible";
+  richEl.innerHTML="";
+  richEl.style.fontSize=base+"px";
+  if(render){
+    const tree=parseTree(str,wl);
+    richEl.appendChild(renderTree(tree,{base:base}));
+    applySizes(richEl, base);
+  }else{
+    richEl.textContent=str;
+  }
+
+  /* 高亮 */
+  hlEl.innerHTML=highlight(str,wl) || '<span class="t-bad">（空）</span>';
+}
+
+update();
+
+/* 快捷键：Ctrl+Enter 换行插入 */
+inputEl.addEventListener("keydown", e=>{
+  if(e.key==="Enter" && (e.ctrlKey||e.metaKey)){
+    e.preventDefault();
+    const s=inputEl.selectionStart, t=inputEl.value;
+    inputEl.value=t.slice(0,s)+"<br>"+t.slice(inputEl.selectionEnd);
+    inputEl.selectionStart=inputEl.selectionEnd=s+4;
+    update();
+  }
+});
+</script>
+</body>
+</html>
