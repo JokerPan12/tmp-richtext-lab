@@ -77,11 +77,45 @@
   .chip{background:var(--panel2);color:var(--dim);border:1px solid var(--line);padding:5px 10px;font-size:12px;border-radius:20px}
   .chip.on{background:rgba(126,195,255,.13);border-color:#3a5f85;color:var(--blue)}
 
-  .swatches{display:flex;flex-wrap:wrap;gap:6px}
-  .sw{width:26px;height:26px;border-radius:7px;border:2px solid transparent;cursor:pointer;padding:0}
-  .sw:hover{transform:scale(1.1)}
-  .sw.on{border-color:#fff;box-shadow:0 0 0 2px var(--gold)}
-  .colorpick{width:34px;height:26px;padding:0;border:1px solid var(--line);border-radius:7px;background:var(--panel2);cursor:pointer}
+  /* —— 颜色：预览块 + 色相/饱和/明度 三条滑块 —— */
+  .colorrow{display:flex;flex-wrap:wrap;gap:9px;align-items:center;flex:1}
+  .colorprev{
+    width:104px;height:32px;flex:none;border:1px solid var(--line);border-radius:8px;
+    background:#e0b45e;cursor:pointer;position:relative;overflow:hidden;padding:0;
+  }
+  .colorprev span{
+    position:absolute;left:0;right:0;bottom:0;font-family:Consolas,monospace;font-size:10.5px;
+    text-align:center;background:rgba(0,0,0,.55);color:#fff;line-height:13px;letter-spacing:.3px;
+  }
+  .colorprev:hover{border-color:var(--gold)}
+  .sllabel{color:var(--dim2);font-size:11.5px;flex:none;width:26px}
+  .colorrow .slider{min-width:210px;max-width:320px}
+  /* 滑块轨道直接用颜色本身当背景，所见即所得 */
+  input[type=range].hue{
+    background:linear-gradient(90deg,#f00 0%,#ff0 17%,#0f0 33%,#0ff 50%,#00f 67%,#f0f 83%,#f00 100%);
+    border-radius:6px;height:12px;appearance:none;-webkit-appearance:none;
+  }
+  input[type=range].sat{border-radius:6px;height:12px;appearance:none;-webkit-appearance:none}
+  input[type=range].bri{border-radius:6px;height:12px;appearance:none;-webkit-appearance:none}
+  /* appearance:none 后轨道要自己画（轨道本身用上面的 background 渐变） */
+  input[type=range].hue::-webkit-slider-runnable-track,
+  input[type=range].sat::-webkit-slider-runnable-track,
+  input[type=range].bri::-webkit-slider-runnable-track{height:12px;border-radius:6px;background:transparent}
+  input[type=range].hue::-moz-range-track,
+  input[type=range].sat::-moz-range-track,
+  input[type=range].bri::-moz-range-track{height:12px;border-radius:6px;background:transparent}
+  input[type=range].hue::-webkit-slider-thumb,
+  input[type=range].sat::-webkit-slider-thumb,
+  input[type=range].bri::-webkit-slider-thumb{
+    -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+    background:#fff;border:2px solid #14161c;box-shadow:0 1px 4px rgba(0,0,0,.6);cursor:pointer;
+  }
+  input[type=range].hue::-moz-range-thumb,
+  input[type=range].sat::-moz-range-thumb,
+  input[type=range].bri::-moz-range-thumb{
+    width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid #14161c;cursor:pointer;
+  }
+  .colorpick{width:38px;height:32px;padding:0;border:1px solid var(--line);border-radius:8px;background:var(--panel2);cursor:pointer}
   .hexin{
     width:96px;background:#0d0f14;color:var(--txt);border:1px solid var(--line);
     border-radius:7px;padding:5px 8px;font-family:Consolas,monospace;font-size:12px;
@@ -162,16 +196,22 @@
     .chip{padding:10px 14px;font-size:13px}
     .btn{padding:10px 14px;font-size:13.5px}
     .btn.tiny{padding:8px 12px;font-size:12.5px}
-    .sw{width:34px;height:34px}
-    .colorpick{width:44px;height:34px}
+    .colorprev{width:120px;height:38px}
+    .colorpick{width:48px;height:38px}
     .tagchip{padding:5px 5px 5px 11px}
     .tagchip .x{font-size:16px;padding:3px 8px}
     .tagchip .mv{font-size:13px;padding:3px 6px}
     input[type=range]{height:32px}
+    /* 颜色滑块加粗轨道、加大滑块，手指好操控 */
+    input[type=range].hue,input[type=range].sat,input[type=range].bri{height:20px}
+    input[type=range].hue::-webkit-slider-runnable-track,
+    input[type=range].sat::-webkit-slider-runnable-track,
+    input[type=range].bri::-webkit-slider-runnable-track{height:20px}
+    input[type=range].hue::-webkit-slider-thumb,
+    input[type=range].sat::-webkit-slider-thumb,
+    input[type=range].bri::-webkit-slider-thumb{width:26px;height:26px;margin-top:-3px}
     /* iOS 上小于 16px 的输入框获得焦点会被强制放大，这里统一顶到 16px */
     #text,#code,.hexin,.num{font-size:16px}
-    /* 触屏没有 hover，去掉放大位移 */
-    .sw:hover{transform:none}
   }
 
   /* 平板竖屏 / 窄窗口 */
@@ -190,7 +230,8 @@
     .card{padding:13px 13px;border-radius:11px}
     .rowlabel{width:100%;margin-bottom:1px;font-size:11.5px}
     .row{gap:6px;margin-bottom:10px}
-    .swatches{gap:7px}
+    .colorrow{gap:8px}
+    .colorrow .slider{min-width:0;max-width:none;flex:1 1 100%}
     .toast{left:12px;right:12px;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateY(20px);text-align:center}
     .toast.show{transform:translateY(0)}
     .note{font-size:12px;padding:9px 12px}
@@ -201,14 +242,15 @@
     .wrap{padding:12px 10px 64px}
     .card{padding:11px 11px}
     .opt{padding:9px 11px;font-size:13px}
-    .sw{width:30px;height:30px}
     .chatpane{padding:11px 12px}
     .chatpane .msgline{font-size:14px}
     #code{padding:10px;font-size:15px}
     .result{gap:10px}
-    /* 字号滑块和数字框换成上下两行，避免挤成一条 */
+    /* 滑块和数字框换成上下两行，避免挤成一条 */
     .slider{flex-wrap:wrap}
     .slider input[type=range]{flex:1 1 100%}
+    /* 颜色预览块独占一行，滑块各占一行 */
+    .colorprev{width:100%;height:34px}
     /* 手填 HEX / 图标名 / 链接 id 独占一行，不再被挤到换行后只剩一点点宽 */
     .hexin{flex:1 1 100%;width:auto}
   }
@@ -258,9 +300,26 @@
 
     <div class="row">
       <div class="rowlabel">颜色</div>
-      <div class="swatches" id="swatches"></div>
-      <input type="color" class="colorpick" id="colorpick" value="#e0b45e" title="取色器">
-      <input type="text" class="hexin" id="hexin" placeholder="#e0b45e" spellcheck="false" title="可填 8 位带透明度">
+      <div class="colorrow">
+        <button class="colorprev" id="colorprev" title="点击复制色值"><span id="colorprevhex">#e0b45e</span></button>
+        <div class="slider">
+          <span class="sllabel">色相</span>
+          <input type="range" id="hueRange" class="hue" min="0" max="360" step="0.1" value="41">
+          <input type="number" class="num" id="hueNum" min="0" max="360" step="0.1" value="41">
+        </div>
+        <div class="slider">
+          <span class="sllabel">饱和</span>
+          <input type="range" id="satRange" class="sat" min="0" max="100" step="0.1" value="65">
+          <input type="number" class="num" id="satNum" min="0" max="100" step="0.1" value="65">
+        </div>
+        <div class="slider">
+          <span class="sllabel">明度</span>
+          <input type="range" id="briRange" class="bri" min="0" max="100" step="0.1" value="88">
+          <input type="number" class="num" id="briNum" min="0" max="100" step="0.1" value="88">
+        </div>
+        <input type="color" class="colorpick" id="colorpick" value="#e0b45e" title="系统取色器">
+        <input type="text" class="hexin" id="hexin" placeholder="#e0b45e" spellcheck="false" title="可填 6 位，或 8 位带透明度">
+      </div>
     </div>
 
     <div class="row">

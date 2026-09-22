@@ -114,9 +114,53 @@ if(idx){
       c.compose("滴滴滴", c.state.order, c.state.on, c.state) === "<color=#e0b45e><size=100><b>滴滴滴</b></size></color>",
       c.compose("滴滴滴", c.state.order, c.state.on, c.state));
     check("默认选中了 颜色/字号/加粗", !!(c.state.on.color && c.state.on.size && c.state.on.b));
+    /* 颜色滑块：HEX ↔ HSV 互转必须自洽 */
+    const cv = c.color;
+    check("默认颜色 #e0b45e 反解成 HSV 后再转回仍是 #e0b45e",
+      cv.hsvToHex(c.state.hue, c.state.sat, c.state.bri) === "#e0b45e",
+      "HSV=" + c.state.hue + "," + c.state.sat + "," + c.state.bri + " → " + cv.hsvToHex(c.state.hue, c.state.sat, c.state.bri));
+    check("纯红 #ff0000 → HSV(0,100,100) → 回原值",
+      cv.hsvToHex(0, 100, 100) === "#ff0000",
+      cv.hsvToHex(0, 100, 100));
+    check("纯白 #ffffff → HSV(任意,0,100) → 回原值", cv.hsvToHex(123, 0, 100) === "#ffffff", cv.hsvToHex(123, 0, 100));
+    check("纯黑 #000000 → HSV(任意,任意,0) → 回原值", cv.hsvToHex(200, 80, 0) === "#000000", cv.hsvToHex(200, 80, 0));
+    const back = cv.hexToHsv("#7ec3ff");
+    check("HEX→HSV 抽查 #7ec3ff ≈ (207,51,100)", Math.abs(back.h - 207) <= 2 && Math.abs(back.s - 51) <= 2 && back.v === 100,
+      JSON.stringify(back));
+    /* 取色器 / HEX 手填的结果都要能回填滑块 */
+    let allRound = true, badOne = "";
+    for (const h of [0, 30, 60, 120, 180, 240, 300, 359]) {
+      for (const s of [0, 50, 100]) {
+        for (const v of [0, 50, 100]) {
+          const hex = cv.hsvToHex(h, s, v);
+          const rt = cv.hexToHsv(hex);
+          if (cv.hsvToHex(rt.h, rt.s, rt.v) !== hex) { allRound = false; badOne = h + "," + s + "," + v + " → " + hex + " → " + JSON.stringify(rt); }
+        }
+      }
+    }
+    check("HSV→HEX→HSV→HEX 全组合往返一致（72 组）", allRound, badOne);
+    /* 穷举抽样：RGB 每通道按 0/51/102/153/204/255 组合（216 色），
+       模拟用户用滑块调出颜色后再被 HEX 手填/取色器回填的场景 */
+    const badRgb = [];
+    for (const r of [0, 51, 102, 153, 204, 255]) {
+      for (const g of [0, 51, 102, 153, 204, 255]) {
+        for (const b of [0, 51, 102, 153, 204, 255]) {
+          const hex = cv.rgbToHex(r, g, b);
+          const hsv = cv.hexToHsv(hex);
+          const back = cv.hsvToHex(hsv.h, hsv.s, hsv.v);
+          if (back !== hex) badRgb.push(hex + " → " + JSON.stringify(hsv) + " → " + back);
+        }
+      }
+    }
+    check("216 色抽样 HEX→HSV→HEX 全部不变", badRgb.length === 0, badRgb.slice(0, 5).join(" | "));
   }
-  ["presets","grp-text","grp-deco","grp-size","swatches","picked","code","preview","rawout","counter","taglen"]
+  ["presets","grp-text","grp-deco","grp-size","picked","code","preview","rawout","counter","taglen"]
     .forEach(id => check("容器存在: " + id, idx.doc._byId.has(id)));
+  /* 颜色已从"固定色块"改为"预览块 + 三滑块" */
+  ["colorprev","colorprevhex","hueRange","satRange","briRange","hueNum","satNum","briNum"]
+    .forEach(id => check("颜色控件存在: " + id, idx.doc._byId.has(id)));
+  check("固定色块容器已移除", !idx.doc._byId.has("swatches"));
+  check("app.js 里不再有固定色表", !fs.readFileSync(D + "app.js", "utf8").includes("COLORS = ["));
   /* 回归：实测无效的标签已从生成器移除，页面上不该还有它们的控件 */
   check("页面上没有渐变字控件", !idx.doc._byId.has("chipGradient"));
   check("页面上没有底色高亮控件", !idx.doc._byId.has("chipMark") && !idx.doc._byId.has("markpick"));
