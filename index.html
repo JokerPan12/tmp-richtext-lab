@@ -174,6 +174,84 @@
     font-size:.78em;padding:0 .35em;font-weight:700;vertical-align:middle;
   }
 
+  /* —— 片段列表 —— */
+  #segments{display:flex;flex-direction:column;gap:9px}
+  .segempty{
+    color:#4d5468;font-size:12.5px;background:#0d0f14;border:1px dashed var(--line);
+    border-radius:9px;padding:14px;text-align:center;
+  }
+  .segcard{
+    background:#0d0f14;border:1px solid var(--line);border-radius:10px;
+    padding:9px 10px;cursor:pointer;transition:.12s;
+  }
+  .segcard:hover{border-color:#3f4661}
+  .segcard.active{border-color:var(--gold);box-shadow:0 0 0 1px rgba(224,180,94,.35)}
+  .seghead{display:flex;align-items:center;gap:7px;margin-bottom:7px;flex-wrap:wrap}
+  .segno{color:var(--dim2);font-size:11.5px;font-family:Consolas,monospace;flex:none}
+  .segpick{
+    background:var(--panel2);color:var(--dim);border:1px solid var(--line);
+    border-radius:20px;padding:3px 11px;font-size:11.5px;flex:none;
+  }
+  .segpick.on{background:rgba(224,180,94,.16);border-color:var(--gold);color:var(--gold);font-weight:700}
+  .segsum{color:var(--dim2);font-size:11.5px;flex:1;min-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .segbtn{
+    background:transparent;border:1px solid var(--line);color:var(--dim);
+    width:24px;height:24px;line-height:1;border-radius:6px;padding:0;font-size:12px;flex:none;
+  }
+  .segbtn:hover:enabled{color:var(--gold);border-color:var(--gold)}
+  .segbtn:disabled{opacity:.28;cursor:default}
+  .segbtn.del:hover{color:var(--bad);border-color:var(--bad)}
+  .segtext{
+    width:100%;background:#14161c;color:var(--txt);border:1px solid var(--line);
+    border-radius:8px;padding:9px 10px;font-family:inherit;font-size:15px;
+    line-height:1.6;resize:vertical;min-height:38px;
+  }
+  .segtext:focus{outline:1px solid var(--gold);border-color:var(--gold)}
+  .segtext::placeholder{color:#4d5468}
+  .segtools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+  .segtool{
+    background:var(--panel2);color:var(--dim);border:1px solid var(--line);
+    border-radius:20px;padding:4px 11px;font-size:11.5px;
+  }
+  .segtool.on{background:rgba(126,195,255,.13);border-color:#3a5f85;color:var(--blue);font-weight:700}
+  .segswatch{
+    width:26px;height:22px;border-radius:6px;border:2px solid var(--line);padding:0;cursor:pointer;
+  }
+  .segswatch:hover{border-color:var(--gold)}
+  .segsize{
+    width:62px;background:#14161c;color:var(--txt);border:1px solid var(--line);
+    border-radius:6px;padding:3px 6px;font-family:Consolas,monospace;font-size:12px;text-align:center;
+  }
+  .segsize:focus{outline:1px solid var(--gold)}
+
+  /* —— 颜色弹窗 —— */
+  .modal{
+    border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--txt);
+    padding:0;max-width:min(560px, 94vw);width:100%;box-shadow:0 24px 60px rgba(0,0,0,.6);
+  }
+  .modal::backdrop{background:rgba(0,0,0,.62)}
+  .modal .mhead{
+    display:flex;align-items:center;gap:10px;padding:13px 16px;
+    border-bottom:1px solid var(--line);font-size:13px;font-weight:700;
+  }
+  .modal .mhead .hint{margin-left:auto;font-weight:400;font-size:11.5px;color:var(--dim2)}
+  .modal .mbody{padding:15px 16px;display:flex;flex-direction:column;gap:12px}
+  .modal .mfoot{
+    display:flex;gap:9px;justify-content:flex-end;padding:12px 16px;
+    border-top:1px solid var(--line);background:#14161c;border-radius:0 0 14px 14px;
+  }
+  .previewBig{
+    height:52px;border-radius:10px;border:1px solid var(--line);position:relative;
+    overflow:hidden;background:#ffffff;
+  }
+  .previewBig span{
+    position:absolute;left:0;right:0;bottom:0;text-align:center;font-family:Consolas,monospace;
+    font-size:11.5px;background:rgba(0,0,0,.55);color:#fff;line-height:16px;
+  }
+  .mslider{display:flex;align-items:center;gap:10px}
+  .mslider .sllabel{width:34px}
+  .mslider input[type=range]{flex:1;min-width:110px}
+
   .note{background:#1a1f29;border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:10px 14px;color:#bcc3d6;font-size:12.5px;line-height:1.85}
   .note code{font-family:Consolas,monospace;color:var(--gold);font-size:12px}
   .note a{color:var(--gold)}
@@ -273,20 +351,20 @@
     <a href="lab.html">标签实验室 →</a>
   </div>
 
-  <!-- 1 输入 -->
+  <!-- 1 输入：多片段 -->
   <div class="card">
-    <h2><span class="step">1</span>输入文字<span class="hint">回车即换行，自动转成 &lt;br&gt;</span></h2>
-    <textarea id="text" placeholder="在这里输入要发送的文字，例如：滴滴滴"></textarea>
+    <h2><span class="step">1</span>输入文字<span class="hint">每个片段可单独设颜色和字号 · 回车即换行</span></h2>
+    <div id="segments"></div>
     <div class="inputbar">
-      <button class="btn tiny" id="btn-br">插入换行</button>
-      <button class="btn tiny" id="btn-clear">清空文字</button>
+      <button class="btn tiny" id="btn-addseg">＋ 添加片段</button>
+      <button class="btn tiny" id="btn-clear">全部清空</button>
       <span class="counter" id="counter">0 字</span>
     </div>
   </div>
 
   <!-- 2 样式 -->
   <div class="card">
-    <h2><span class="step">2</span>选择样式<span class="hint">再点一次取消 · 可叠加多条</span></h2>
+    <h2><span class="step">2</span>把样式应用给选中片段<span class="hint">先点片段上的「选用」，再设下面的值</span></h2>
 
     <div class="row">
       <div class="rowlabel">快捷组合</div>
@@ -301,24 +379,9 @@
     <div class="row">
       <div class="rowlabel">颜色</div>
       <div class="colorrow">
-        <button class="colorprev" id="colorprev" title="点击复制色值"><span id="colorprevhex">#e0b45e</span></button>
-        <div class="slider">
-          <span class="sllabel">色相</span>
-          <input type="range" id="hueRange" class="hue" min="0" max="360" step="0.1" value="41">
-          <input type="number" class="num" id="hueNum" min="0" max="360" step="0.1" value="41">
-        </div>
-        <div class="slider">
-          <span class="sllabel">饱和</span>
-          <input type="range" id="satRange" class="sat" min="0" max="100" step="0.1" value="65">
-          <input type="number" class="num" id="satNum" min="0" max="100" step="0.1" value="65">
-        </div>
-        <div class="slider">
-          <span class="sllabel">明度</span>
-          <input type="range" id="briRange" class="bri" min="0" max="100" step="0.1" value="88">
-          <input type="number" class="num" id="briNum" min="0" max="100" step="0.1" value="88">
-        </div>
-        <input type="color" class="colorpick" id="colorpick" value="#e0b45e" title="系统取色器">
-        <input type="text" class="hexin" id="hexin" placeholder="#e0b45e" spellcheck="false" title="可填 6 位，或 8 位带透明度">
+        <button class="colorprev" id="colorprev" title="点这里打开取色器"><span id="colorprevhex">#ffffff</span></button>
+        <input type="text" class="hexin" id="hexin" placeholder="#ffffff" spellcheck="false" title="直接填 HEX；也可点左边色块用滑块取色">
+        <span class="unit">作用于当前选中的片段</span>
       </div>
     </div>
 
@@ -424,6 +487,43 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 颜色选择弹窗 -->
+<dialog class="modal" id="colorModal">
+  <div class="mhead">
+    <span>选择颜色</span>
+    <span class="hint">拖动滑块，或用下面的 HEX / 系统取色器</span>
+  </div>
+  <div class="mbody">
+    <div class="previewBig" id="previewBig"><span id="previewBigHex">#ffffff</span></div>
+
+    <div class="mslider">
+      <span class="sllabel">色相</span>
+      <input type="range" id="hueRange" class="hue" min="0" max="360" step="0.1" value="0">
+      <input type="number" class="num" id="hueNum" min="0" max="360" step="0.1" value="0">
+    </div>
+    <div class="mslider">
+      <span class="sllabel">饱和</span>
+      <input type="range" id="satRange" class="sat" min="0" max="100" step="0.1" value="0">
+      <input type="number" class="num" id="satNum" min="0" max="100" step="0.1" value="0">
+    </div>
+    <div class="mslider">
+      <span class="sllabel">明度</span>
+      <input type="range" id="briRange" class="bri" min="0" max="100" step="0.1" value="100">
+      <input type="number" class="num" id="briNum" min="0" max="100" step="0.1" value="100">
+    </div>
+
+    <div class="row" style="margin:0">
+      <div class="rowlabel" style="width:34px">HEX</div>
+      <input type="text" class="hexin" id="mHex" placeholder="#ffffff" spellcheck="false" style="width:110px">
+      <input type="color" class="colorpick" id="colorpick" value="#ffffff" title="系统取色器">
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn" id="mClose">取消</button>
+    <button class="btn primary" id="mDone">完成</button>
+  </div>
+</dialog>
 
 <script src="lib.mjs"></script>
 <script src="compose.mjs"></script>

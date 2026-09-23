@@ -110,24 +110,33 @@ if(idx){
   const c = idx.win.__composer;
   check("页面暴露了 __composer（说明脚本执行到了末尾）", !!c);
   if(c){
-    check("默认状态生成预期代码（与原始例子一致）",
-      c.compose("滴滴滴", c.state.order, c.state.on, c.state) === "<color=#e0b45e><size=100><b>滴滴滴</b></size></color>",
-      c.compose("滴滴滴", c.state.order, c.state.on, c.state));
-    check("默认选中了 颜色/字号/加粗", !!(c.state.on.color && c.state.on.size && c.state.on.b));
+    check("默认就有一个空片段（打开即可打字）", c.segments.length === 1 && c.segments[0].text === "");
+    check("默认颜色是白色", c.DEFAULTS.color === "#ffffff", c.DEFAULTS.color);
+    check("默认字号是 16", c.DEFAULTS.size === "16", c.DEFAULTS.size);
+    /* 图中示例：三段不同颜色 */
+    c.segments.length = 0;
+    c.segments.push(
+      { id:"a", text:"好友给你赠送了",   on:{ size:true, color:true },         color:"#ffffff", size:"16" },
+      { id:"b", text:"【千机神杯×100】", on:{ size:true, color:true, b:true }, color:"#ff2f2f", size:"16" },
+      { id:"c", text:"【点击领取】",     on:{ size:true, color:true },         color:"#7ec3ff", size:"16" }
+    );
+    const demo = c.generate();
+    check("图中示例能一次生成三段代码",
+      demo === "<size=16><color=#ffffff>好友给你赠送了</color></size>"
+            + "<size=16><color=#ff2f2f><b>【千机神杯×100】</b></color></size>"
+            + "<size=16><color=#7ec3ff>【点击领取】</color></size>",
+      demo);
+    check("示例里默认字号确实是 16", (demo.match(/<size=16>/g) || []).length === 3, demo);
+    check("示例里三段颜色各不相同", ["#ffffff","#ff2f2f","#7ec3ff"].every(x => demo.includes(x)), demo);
+
     /* 颜色滑块：HEX ↔ HSV 互转必须自洽 */
     const cv = c.color;
-    check("默认颜色 #e0b45e 反解成 HSV 后再转回仍是 #e0b45e",
-      cv.hsvToHex(c.state.hue, c.state.sat, c.state.bri) === "#e0b45e",
-      "HSV=" + c.state.hue + "," + c.state.sat + "," + c.state.bri + " → " + cv.hsvToHex(c.state.hue, c.state.sat, c.state.bri));
-    check("纯红 #ff0000 → HSV(0,100,100) → 回原值",
-      cv.hsvToHex(0, 100, 100) === "#ff0000",
-      cv.hsvToHex(0, 100, 100));
+    check("纯红 #ff0000 → HSV(0,100,100) → 回原值", cv.hsvToHex(0, 100, 100) === "#ff0000", cv.hsvToHex(0, 100, 100));
     check("纯白 #ffffff → HSV(任意,0,100) → 回原值", cv.hsvToHex(123, 0, 100) === "#ffffff", cv.hsvToHex(123, 0, 100));
     check("纯黑 #000000 → HSV(任意,任意,0) → 回原值", cv.hsvToHex(200, 80, 0) === "#000000", cv.hsvToHex(200, 80, 0));
     const back = cv.hexToHsv("#7ec3ff");
     check("HEX→HSV 抽查 #7ec3ff ≈ (207,51,100)", Math.abs(back.h - 207) <= 2 && Math.abs(back.s - 51) <= 2 && back.v === 100,
       JSON.stringify(back));
-    /* 取色器 / HEX 手填的结果都要能回填滑块 */
     let allRound = true, badOne = "";
     for (const h of [0, 30, 60, 120, 180, 240, 300, 359]) {
       for (const s of [0, 50, 100]) {
@@ -139,28 +148,31 @@ if(idx){
       }
     }
     check("HSV→HEX→HSV→HEX 全组合往返一致（72 组）", allRound, badOne);
-    /* 穷举抽样：RGB 每通道按 0/51/102/153/204/255 组合（216 色），
-       模拟用户用滑块调出颜色后再被 HEX 手填/取色器回填的场景 */
     const badRgb = [];
     for (const r of [0, 51, 102, 153, 204, 255]) {
       for (const g of [0, 51, 102, 153, 204, 255]) {
         for (const b of [0, 51, 102, 153, 204, 255]) {
           const hex = cv.rgbToHex(r, g, b);
           const hsv = cv.hexToHsv(hex);
-          const back = cv.hsvToHex(hsv.h, hsv.s, hsv.v);
-          if (back !== hex) badRgb.push(hex + " → " + JSON.stringify(hsv) + " → " + back);
+          const back2 = cv.hsvToHex(hsv.h, hsv.s, hsv.v);
+          if (back2 !== hex) badRgb.push(hex + " → " + JSON.stringify(hsv) + " → " + back2);
         }
       }
     }
     check("216 色抽样 HEX→HSV→HEX 全部不变", badRgb.length === 0, badRgb.slice(0, 5).join(" | "));
   }
-  ["presets","grp-text","grp-deco","grp-size","picked","code","preview","rawout","counter","taglen"]
+  ["presets","grp-text","grp-deco","grp-size","picked","code","preview","rawout","counter","taglen","segments"]
     .forEach(id => check("容器存在: " + id, idx.doc._byId.has(id)));
-  /* 颜色已从"固定色块"改为"预览块 + 三滑块" */
-  ["colorprev","colorprevhex","hueRange","satRange","briRange","hueNum","satNum","briNum"]
+  /* 颜色控件现在都在弹窗里 */
+  ["colorprev","colorprevhex","colorModal","hueRange","satRange","briRange","hueNum","satNum","briNum","mHex","previewBig","mClose","mDone"]
     .forEach(id => check("颜色控件存在: " + id, idx.doc._byId.has(id)));
   check("固定色块容器已移除", !idx.doc._byId.has("swatches"));
   check("app.js 里不再有固定色表", !fs.readFileSync(D + "app.js", "utf8").includes("COLORS = ["));
+  check("页面里没有重复 id", (function(){
+    const all = [...fs.readFileSync(D + "index.html", "utf8").matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
+    const dup = all.filter((v, i) => all.indexOf(v) !== i);
+    return dup.length === 0 ? true : dup.join(",");
+  })() === true, "重复 id 会导致 getElementById 取到错的元素");
   /* 回归：实测无效的标签已从生成器移除，页面上不该还有它们的控件 */
   check("页面上没有渐变字控件", !idx.doc._byId.has("chipGradient"));
   check("页面上没有底色高亮控件", !idx.doc._byId.has("chipMark") && !idx.doc._byId.has("markpick"));
@@ -168,9 +180,14 @@ if(idx){
   check("app.js 里不再引用 chipGradient", !appSrc.includes("chipGradient"));
   check("app.js 里不再引用 chipMark / markpick", !appSrc.includes("chipMark") && !appSrc.includes("markpick"));
   if(c){
+    /* 把库里所有能勾的样式全开，逐段生成，确认产不出已移除的标签 */
     const allKeys = Object.keys(c.PLAIN_TAGS);
-    const allOn = {}; allKeys.forEach(k => { allOn[k] = true; });
-    const everything = c.compose("x", allKeys, allOn, c.state);
+    const segOn = { size:true, color:true, b:true, i:true };
+    allKeys.forEach(k => { segOn[k] = true; });
+    const everything = c.composeSegment(
+      { text:"x", on:segOn, color:"#123456", size:"20" },
+      Object.assign({}, c.state, c.state.globals)
+    );
     check("勾满全部样式也产不出 <gradient> / <mark>",
       everything.indexOf("<gradient") < 0 && everything.indexOf("<mark") < 0, everything);
   }

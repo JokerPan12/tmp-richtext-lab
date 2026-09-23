@@ -93,8 +93,39 @@ function compose(text, order, on, state){
   return open + body + close;
 }
 
+/* -----------------------------------------------------------------------------
+   分段生成：一条消息可以由多个"片段"拼成，每段有自己的颜色/字号/加粗/斜体。
+   例：白色「好友给你赠送了」+ 红色「【千机神杯×100】」+ 青色「【点击领取】」
+
+   seg  = { text, on:{color:true,...}, color:"#ffffff", size:"16" }
+   base = 全局默认值（片段没单独设过的值就取 base）
+   ----------------------------------------------------------------------------- */
+const SEG_ORDER = ["size", "color", "b", "i"];   /* 固定嵌套顺序，输出稳定可预期 */
+
+function segmentState(seg, base){
+  const s = Object.assign({}, base);
+  if(seg.color) s.color = seg.color;
+  if(seg.size !== undefined && seg.size !== null && seg.size !== "") s.size = seg.size;
+  return s;
+}
+function composeSegment(seg, base){
+  const body = safeText(seg.text);
+  if(!body) return "";
+  const on = seg.on || {};
+  const st = segmentState(seg, base);
+  const keys = SEG_ORDER.filter(k => on[k]);
+  const tags = keys.map(k => tagFor(k, st)).filter(Boolean);
+  const open = tags.join("");
+  const close = keys.slice().reverse().map(closingFor).join("");
+  return open + body + close;
+}
+function composeSegments(segments, base){
+  return (segments || []).map(seg => composeSegment(seg, base)).filter(Boolean).join("");
+}
+
 return {
   TEXT_OPTS, DECO_OPTS, PLAIN_TAGS, ALL_OPTS, LABEL, GROUPS,
-  SELF_CLOSING_KEYS, TAG_NAME, tagNameOf, closingFor, tagFor, safeText, compose
+  SELF_CLOSING_KEYS, TAG_NAME, tagNameOf, closingFor, tagFor, safeText, compose,
+  SEG_ORDER, segmentState, composeSegment, composeSegments
 };
 });

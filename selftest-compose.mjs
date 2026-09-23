@@ -2,7 +2,8 @@
 import { loadLib } from "./test-helpers.mjs";
 
 const RTC = loadLib("compose.mjs");
-const { compose, tagFor, closingFor, PLAIN_TAGS, ALL_OPTS, LABEL, GROUPS, SELF_CLOSING_KEYS, safeText } = RTC;
+const { compose, tagFor, closingFor, PLAIN_TAGS, ALL_OPTS, LABEL, GROUPS, SELF_CLOSING_KEYS, safeText,
+        segmentState, composeSegment, composeSegments, SEG_ORDER } = RTC;
 const { parseTree, linesOf } = loadLib("lib.mjs");
 
 let pass = 0, fail = 0;
@@ -131,6 +132,57 @@ check("勾满全部样式也产不出已移除的文字标签", (function(){
     return code.indexOf(t) < 0;
   });
 })(), gen("x", Object.keys(PLAIN_TAGS).concat(ALL_OPTS.map(o => o.k))));
+
+/* ---------- 12) 分段生成：图中那种"一条消息三段不同颜色" ---------- */
+const BASE = Object.assign({}, ST, { color:"#ffffff", size:16 });
+const segs = [
+  { text:"好友给你赠送了",   on:{ size:true, color:true },              color:"#ffffff" },
+  { text:"【千机神杯×100】", on:{ size:true, color:true, b:true },      color:"#ff2f2f" },
+  { text:"【点击领取】",     on:{ size:true, color:true },              color:"#7ec3ff" }
+];
+const segCode = composeSegments(segs, BASE);
+check("分段：三段都带 <size=16>",
+  (segCode.match(/<size=16>/g) || []).length === 3, segCode);
+check("分段：白色段正确",
+  segCode.indexOf("<size=16><color=#ffffff>好友给你赠送了</color></size>") >= 0, segCode);
+check("分段：红色加粗段正确",
+  segCode.indexOf("<size=16><color=#ff2f2f><b>【千机神杯×100】</b></color></size>") >= 0, segCode);
+check("分段：青色段正确",
+  segCode.indexOf("<size=16><color=#7ec3ff>【点击领取】</color></size>") >= 0, segCode);
+check("分段：三段顺序与拼接正确",
+  segCode === "<size=16><color=#ffffff>好友给你赠送了</color></size>"
+            + "<size=16><color=#ff2f2f><b>【千机神杯×100】</b></color></size>"
+            + "<size=16><color=#7ec3ff>【点击领取】</color></size>",
+  segCode);
+check("分段：生成的代码能被解析器正确还原出三段文字", (function(){
+  const t = parseTree(segCode, { enabled:false });
+  let s = ""; (function w(n){ if(n.tag==="#text") s += n.text; (n.kids||[]).forEach(w); })(t);
+  return s === "好友给你赠送了【千机神杯×100】【点击领取】";
+})(), segCode);
+
+check("分段：空片段被跳过", composeSegments([{text:"", on:{b:true}}, {text:"有", on:{}}], BASE) === "有");
+check("分段：没设过颜色的片段取全局默认色",
+  composeSegment({ text:"x", on:{ color:true } }, BASE) === "<color=#ffffff>x</color>",
+  composeSegment({ text:"x", on:{ color:true } }, BASE));
+check("分段：单独设了颜色就用自己的",
+  composeSegment({ text:"x", on:{ color:true }, color:"#123456" }, BASE) === "<color=#123456>x</color>",
+  composeSegment({ text:"x", on:{ color:true }, color:"#123456" }, BASE));
+check("分段：单独设了字号就用自己的",
+  composeSegment({ text:"x", on:{ size:true }, size:"40" }, BASE) === "<size=40>x</size>",
+  composeSegment({ text:"x", on:{ size:true }, size:"40" }, BASE));
+check("分段：默认字号就是 16",
+  composeSegment({ text:"x", on:{ size:true } }, BASE) === "<size=16>x</size>",
+  composeSegment({ text:"x", on:{ size:true } }, BASE));
+check("分段：换行转 <br>", composeSegment({ text:"a\nb", on:{} }, BASE) === "a<br>b");
+check("分段：尖括号被转义", composeSegment({ text:"<b>", on:{} }, BASE) === "&lt;b&gt;");
+check("分段：不加任何样式就是纯文本", composeSegment({ text:"裸文本", on:{} }, BASE) === "裸文本");
+check("分段：嵌套顺序固定为 size→color→b→i",
+  JSON.stringify(SEG_ORDER) === '["size","color","b","i"]', JSON.stringify(SEG_ORDER));
+check("分段：全部样式开启时嵌套与闭合配对",
+  composeSegment({ text:"x", on:{ size:true, color:true, b:true, i:true }, color:"#abcdef", size:"20" }, BASE)
+    === "<size=20><color=#abcdef><b><i>x</i></b></color></size>",
+  composeSegment({ text:"x", on:{ size:true, color:true, b:true, i:true }, color:"#abcdef", size:"20" }, BASE));
+check("分段：空数组得空串", composeSegments([], BASE) === "" && composeSegments(null, BASE) === "");
 
 console.log("\n结果: " + pass + " 通过, " + fail + " 失败");
 process.exit(fail ? 1 : 0);
